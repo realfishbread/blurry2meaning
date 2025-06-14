@@ -1,81 +1,87 @@
 import torch
 import torch.nn as nn
-import torchvision
-import torchvision.transforms as transforms
-import matplotlib.pyplot as plt
-import os
+from torchvision.transforms import ToTensor, Resize, ToPILImage
+from PIL import Image
+from transformers import CLIPProcessor, CLIPModel
+from PIL import ImageEnhance
 
-# 결과 저장 폴더
-os.makedirs("results", exist_ok=True)
-
-# 1. 데이터 불러오기
-transform = transforms.ToTensor()
-train_dataset = torchvision.datasets.MNIST(root='./data', train=True, transform=transform, download=True)
-train_loader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size=64, shuffle=True)
-
-# 2. 다운샘플링 + 업샘플링 전처리 함수
-def degrade_image(img):
-    low_res = transforms.Resize(14)(img)           # 다운샘플링
-    upsampled = transforms.Resize(28)(low_res)      # 다시 업샘플
-    return upsampled
-
-# 3. 모델 정의 (간단한 CNN)
-class SRCNN(nn.Module):
-    def __init__(self):
-        super(SRCNN, self).__init__()
-        self.model = nn.Sequential(
-            nn.Conv2d(1, 64, kernel_size=9, padding=4),
+# 1. SRCNN 모델 정의
+class FSRCNN(nn.Module):
+    def __init__(self, scale_factor=2):
+        super(FSRCNN, self).__init__()
+        self.feature_extraction = nn.Conv2d(3, 56, kernel_size=5, padding=2)
+        self.shrinking = nn.Conv2d(56, 12, kernel_size=1)
+        self.mapping = nn.Sequential(
+            nn.Conv2d(12, 12, kernel_size=3, padding=1),
             nn.ReLU(),
-            nn.Conv2d(64, 32, kernel_size=5, padding=2),
+            nn.Conv2d(12, 12, kernel_size=3, padding=1),
             nn.ReLU(),
-            nn.Conv2d(32, 1, kernel_size=5, padding=2)
+            nn.Conv2d(12, 12, kernel_size=3, padding=1)
         )
+        self.expanding = nn.Conv2d(12, 56, kernel_size=1)
+        self.deconv = nn.ConvTranspose2d(
+    56, 3,
+    kernel_size=8,   # 조금 작게
+    stride=2,
+    padding=3,
+    output_padding=0  # 가능하면 이걸로 줄무늬 없앰
+)
 
     def forward(self, x):
-        return self.model(x)
+        x = torch.relu(self.feature_extraction(x))
+        x = torch.relu(self.shrinking(x))
+        x = self.mapping(x)
+        x = torch.relu(self.expanding(x))
+        x = self.deconv(x)
+        return x
 
-# 4. 학습 준비
+# 2. 모델 로딩
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model = SRCNN().to(device)
-criterion = nn.MSELoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-
-# 5. 학습 루프
-for epoch in range(3):  # 빠르게 끝내려면 에폭 3 정도면 충분!
-    for images, _ in train_loader:
-        images = images.to(device)
-        degraded = degrade_image(images).to(device)
-
-        outputs = model(degraded)
-        loss = criterion(outputs, images)
-
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
-
-    print(f"Epoch [{epoch+1}/3], Loss: {loss.item():.4f}")
-
-# 6. 결과 저장 (시각화)
-sample, _ = next(iter(train_loader))
-sample = sample[:5]
-degraded = degrade_image(sample)
+model = FSRCNN().to(device)  # ✅ 이게 맞아!
+model.load_state_dict(torch.load("results/fsrcnn_model.pth", map_location=device))
 
 model.eval()
+
+# 3. 사용자 이미지 불러오기
+image = Image.open("user_input_lowres.jpg").convert("RGB")
+image = image.resize((32, 32))  # CIFAR 스타일 크기
+lowres_tensor = ToTensor()(image).unsqueeze(0).to(device)
+
+
+enhancer = ImageEnhance.Brightness(image)
+image = enhancer.enhance(1.5)  # 밝기 1.5배
+
+# 4. 복원
 with torch.no_grad():
-    output = model(degraded.to(device)).cpu()
+    restored_tensor = model(lowres_tensor).cpu()
 
-# 원본 / 손상 / 복원 이미지 비교
-for i in range(5):
-    fig, axs = plt.subplots(1, 3, figsize=(6, 2))
-    axs[0].imshow(sample[i][0], cmap='gray')
-    axs[0].set_title("Original")
-    axs[1].imshow(degraded[i][0], cmap='gray')
-    axs[1].set_title("Degraded")
-    axs[2].imshow(output[i][0], cmap='gray')
-    axs[2].set_title("Restored")
-    for ax in axs:
-        ax.axis('off')
-    plt.savefig(f"results/result_{i}.png")
-    plt.close()
+# ✅ 먼저 clamp로 픽셀 값을 [0, 1]로 제한해줘야 함
+restored_tensor = torch.clamp(restored_tensor, 0, 1)
 
-print("✅ 결과 이미지가 results 폴더에 저장되었습니다!")
+# ✅ 그 다음에 PIL 이미지로 변환
+restored_image = ToPILImage()(restored_tensor.squeeze(0))
+
+# ✅ 저장
+restored_image.save("restored_output.jpg")
+
+# 5. CLIP 모델 로딩 (멀티모달 분류기)
+clip_model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
+processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
+
+# 6. 추론 텍스트 후보
+labels = [
+    "a sports car", "a dark car", "a toy car", "a blurry car", "a ship", "a motorcycle",
+    "a truck", "a spaceship"
+]
+
+# 7. 추론 실행
+inputs = processor(text=labels, images=restored_image, return_tensors="pt", padding=True)
+with torch.no_grad():
+    outputs = clip_model(**inputs)
+    probs = outputs.logits_per_image.softmax(dim=1)
+
+top_idx = torch.argmax(probs)
+confidence = probs[0][top_idx].item()
+label = labels[top_idx]
+
+print(f"💡 AI의 추론: '{label}' ({confidence*100:.2f}%)")
