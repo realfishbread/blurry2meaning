@@ -43,7 +43,7 @@
 
 | Original (입력)                    | Restored (복원 결과)             | CLIP 추론 결과            |
 | ---------------------------------- | -------------------------------- | ------------------------- |
-| ![](results/user_input_lowres.jpg) | ![](results/restored_output.jpg) | `"a blurry car"` (34.04%) |
+| ![](user_input_lowres.jpg) | ![](restored_output.jpg) | `"a blurry car"` (34.04%) |
 
 > ✅ CLIP은 복원 전에는 인식이 어려웠던 이미지를,  
 > 복원 후에는 **"자동차"로 추론 가능할 정도로 선명해졌음을 보여줌**
