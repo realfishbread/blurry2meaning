@@ -47,24 +47,4 @@
 | ![](./data/low_res/images%20(1).jpg) | ![](./results/predicted/images%20(1).jpg) | **lighter** | 12.78% | 분류 실패 가능성 |
 | ![](./data/low_res/images.jpg) | ![](./results/predicted/images.jpg) | **Labrador retriever** | 54.14% | 다소 애매하지만 유사 |
 
-## 🏗️ 프로젝트 구조
-
-blurry2meaning/
-├── models/
-│ └── fsrcnn.py # FSRCNN 모델 정의
-├── utils/
-│ └── image_utils.py # 이미지 처리 함수들
-├── data/
-│ ├── original/ # 원본 고해상도 이미지
-│ ├── low_res/ # 저해상도 입력 이미지
-│ ├── high_res/ # 정답 이미지
-├── results/
-│ ├── predicted/ # 복원된 이미지 저장
-│ └── fsrcnn_model.pth # 학습된 모델 weight
-├── prepare_dataset.py # 원본 → 저해상도 생성 스크립트
-├── train.py # FSRCNN 학습 코드
-├── predict.py # 복원 실행 코드
-├── evaluate.py # PSNR, SSIM 성능 평가
-├── predict_and_classify.py # 복원 + 분류 (ResNet18)
-├── imagenet_classes.json # 클래스 라벨 매핑
-└── README.md # 이 문서!
+## 🏗️ 프로젝트 구조 ```plaintext blurry2meaning/ ├── models/ │ └── fsrcnn.py # FSRCNN 모델 정의 ├── utils/ │ └── image_utils.py # 이미지 처리 함수들 ├── data/ │ ├── original/ # 원본 고해상도 이미지 │ ├── low_res/ # 저해상도 입력 이미지 │ ├── high_res/ # 정답 이미지 ├── results/ │ ├── predicted/ # 복원된 이미지 저장 │ └── fsrcnn_model.pth # 학습된 모델 weight ├── prepare_dataset.py # 원본 → 저해상도 생성 스크립트 ├── train.py # FSRCNN 학습 코드 ├── predict.py # 복원 실행 코드 ├── evaluate.py # PSNR, SSIM 성능 평가 ├── predict_and_classify.py # 복원 + 분류 (ResNet18) ├── imagenet_classes.json # 클래스 라벨 매핑 └── README.md # 이 문서! ``` 
