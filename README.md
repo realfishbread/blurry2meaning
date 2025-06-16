@@ -1,9 +1,9 @@
-# 🚀 Super Resolution + AI 인식 실험 (FSRCNN + CLIP)
+# 🚀 Super Resolution + AI 인식 실험 (FSRCNN + ResNet18)
 
 ## 📌 프로젝트 개요
 
 이 프로젝트는 저해상도 이미지를 딥러닝 기반 Super Resolution 모델을 통해 복원하고,  
-복원된 이미지를 OpenAI의 CLIP 모델을 이용해 **"이 이미지가 무엇을 나타내는지" 자연어로 추론**하는 실험입니다.
+복원된 이미지를 ResNet18 분류 모델을 이용해 **"이 이미지가 무엇을 나타내는지" 자연어로 추론**하는 실험입니다.
 
 - **입력**: 흐릿하고 해상도가 낮은 이미지 (예: 32x32)
 - **복원 모델**: FSRCNN (Fast Super-Resolution CNN)
@@ -17,8 +17,7 @@
 
 - Python 3.x
 - PyTorch
-- torchvision
-- HuggingFace `transformers` (CLIP)
+- torchvision (ResNet18)
 - PIL, Matplotlib
 
 ---
@@ -34,7 +33,7 @@
    - 입력: 저해상도 이미지
    - 출력: 선명해진 이미지
 
-3. **CLIP 모델로 의미 추론**
+3. **ResNet18 모델로 의미 추론**
    - 텍스트 후보 중 가장 유사한 설명 추출 (ex: `"a blurry car"`)
 
 ---
