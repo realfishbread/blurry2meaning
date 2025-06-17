@@ -46,3 +46,7 @@
 | ![](./data/low_res/images%20(1).jpg) | ![](./results/predicted/images%20(1).jpg) | **lighter** | 12.78% | 분류 실패 가능성 |
 | ![](./data/low_res/images.jpg) | ![](./results/predicted/images.jpg) | **Labrador retriever** | 54.14% | 다소 애매하지만 유사 |
 
+---
+
+Pretrained on ImageNet (non-commercial use only).
+All rights remain with original copyright holders of images.

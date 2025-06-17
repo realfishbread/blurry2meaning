@@ -25,7 +25,7 @@ def calculate_psnr(img1, img2):
 def calculate_ssim(img1, img2):
     """SSIM 계산 (입력: numpy image)"""
     return structural_similarity(img1, img2, channel_axis=2, data_range=255)
-# 역할: 복원 품질의 구조적 유사성을 계산
+#역할: 복원 품질의 구조적 유사성을 계산
 #SSIM (Structural Similarity Index): 사람 눈의 인식과 유사한 방식으로 복원 품질 측정
 #1.0에 가까울수록 좋음
 
@@ -36,3 +36,6 @@ def resize_image(image, size):
 #역할: 이미지 크기를 지정한 size로 리사이징 (예: (128, 128))
 
 #INTER_CUBIC: 부드러운 고급 리사이징 방법 (4x4 주변 픽셀 사용해서 보간)
+
+
+# ...뭔소린지 다는 못알아 먹음 뇌 터질거같고 나는 왜 이걸하고잇냐
